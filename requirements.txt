@@ -1,0 +1,18 @@
+# Govee H6630 Pixel Hub Requirements
+
+# BLE Communication & Pixel Art
+bleak>=0.21.0
+Pillow>=10.1.0
+cryptography>=41.0.0
+govee-ble-local>=1.10.0
+
+# System Hardware Monitoring (CPU / RAM) & System Tray
+psutil>=5.9.0
+pystray>=0.19.0
+
+# Windows Runtime APIs (Windows 10 / 11)
+# Spotify Media Session Tracking & Windows Toast Notifications
+winrt-Windows.Media.Control
+winrt-Windows.Storage.Streams
+winrt-Windows.UI.Notifications
+winrt-Windows.UI.Notifications.Management

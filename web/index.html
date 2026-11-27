@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Govee H6630 Pixel Hub</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --card-bg: #181b20;
+      --card-border: #282c34;
+      --text: #f0f2f5;
+      --text-dim: #8b949e;
+      --blurple: #5865F2;
+      --green: #00e676;
+      --cyan: #00e5ff;
+      --amber: #ffb300;
+      --red: #ff5252;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    header {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--blurple), var(--cyan));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 18px;
+    }
+    h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #12281e;
+      color: var(--green);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid rgba(0, 230, 118, 0.25);
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 960px;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 800px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    /* Matrix Preview */
+    .preview-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .preview-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .matrix-frame {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      background: #000;
+      border-radius: 12px;
+      padding: 8px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.6), inset 0 0 10px rgba(0,0,0,0.8);
+      border: 2px solid #22252c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .matrix-img {
+      width: 304px;
+      height: 304px;
+      image-rendering: pixelated;
+      border-radius: 6px;
+      box-shadow: 0 0 24px rgba(0, 229, 255, 0.22);
+      filter: contrast(1.06) saturate(1.12);
+    }
+    .led-grid-overlay {
+      position: absolute;
+      width: 304px;
+      height: 304px;
+      pointer-events: none;
+      border-radius: 6px;
+      background-image: radial-gradient(circle, transparent 42%, rgba(0, 0, 0, 0.72) 56%);
+      background-size: 9.5px 9.5px;
+      transition: opacity 0.2s;
+    }
+    .pixel-canvas {
+      width: 256px;
+      height: 256px;
+      image-rendering: pixelated;
+      border: 1px solid #2b3040;
+      border-radius: 6px;
+      background: #000;
+      cursor: crosshair;
+      touch-action: none;
+    }
+    .quick-actions {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+    .btn {
+      flex: 1;
+      min-width: 70px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--card-border);
+      background: #20242b;
+      color: var(--text);
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .btn:hover {
+      background: #2b313a;
+      border-color: #3e4450;
+    }
+    .btn-primary {
+      background: var(--blurple);
+      border-color: var(--blurple);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: #4752c4;
+    }
+
+    /* Plugin List & Controls */
+    .content-column {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-active { background: #132a1e; color: var(--green); }
+    .badge-idle { background: #262a33; color: var(--text-dim); }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #2b303c;
+      transition: .2s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--blurple); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+    .stat-val { color: var(--text); font-weight: 600; }
+
+    .voice-members-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .voice-member-pill {
+      background: #101216;
+      border: 1px solid #282c34;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .speaking-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #444;
+    }
+    .speaking-dot.active {
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+    }
+
+    .color-picker-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 4px;
+    }
+    .color-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.15s;
+    }
+    .color-dot:hover { transform: scale(1.15); }
+    .color-dot.selected { border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.4); }
+
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    input[type="text"] {
+      flex: 1;
+      background: #111317;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 13px;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--blurple);
+    }
+
+    /* Sliders and Range Controls */
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #2b303c;
+      border-radius: 4px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--green);
+      cursor: pointer;
+      box-shadow: 0 0 6px var(--green);
+    }
+    .preset-btns {
+      display: flex;
+      gap: 6px;
+      margin-top: 2px;
+    }
+    .preset-btn {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      background: #20242b;
+      border: 1px solid var(--card-border);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .preset-btn:hover {
+      background: #2b313a;
+      color: #fff;
+    }
+    select {
+      background: #111317;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 5px 8px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">G</div>
+      <div>
+        <h1>Govee H6630 Pixel Hub</h1>
+        <div style="font-size: 12px; color: var(--text-dim);">32×32 Matrix · BLE CC:B8:5E:BE:0F:99</div>
+      </div>
+    </div>
+    <div class="status-badge" id="bleStatus">
+      <div class="dot"></div>
+      <span id="bleText">BLE Aktiv</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Live Matrix Preview -->
+    <div class="preview-card">
+      <div class="preview-header">
+        <span>Live-Anzeige</span>
+        <span id="activeSceneLabel" style="color: var(--cyan);">LÄDT...</span>
+      </div>
+      <div class="matrix-frame">
+        <img id="matrixImg" class="matrix-img" src="/api/live.png" alt="32x32 Matrix">
+        <div id="ledGridOverlay" class="led-grid-overlay"></div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-dim);">
+        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+          <input type="checkbox" checked onchange="document.getElementById('ledGridOverlay').style.opacity = this.checked ? 1 : 0">
+          LED-Matrix-Raster
+        </label>
+      </div>
+      <div class="quick-actions">
+        <button class="btn" onclick="forceWidget('spotify')">🎵 Spotify</button>
+        <button class="btn" onclick="forceWidget('wow')">⚔️ WoW</button>
+        <button class="btn" onclick="forceWidget('weather')">⛅ Wetter</button>
+        <button class="btn" onclick="forceWidget('discord_voice')">🎙️ Voice</button>
+        <button class="btn" onclick="forceWidget('clock')">🕒 Uhr</button>
+        <button class="btn" onclick="forceWidget('hardware')">📊 Stats</button>
+      </div>
+      <div style="font-size: 12px; color: var(--text-dim); text-align: center; width: 100%;">
+        Uploads: <span id="totalUploads" class="stat-val">0</span> · Dauer: <span id="uploadSpeed" class="stat-val">0.0s</span>
+      </div>
+    </div>
+
+    <!-- Plugin Management Cards -->
+    <div class="content-column">
+      <!-- Discord Voice & Talk Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <span style="color: var(--blurple);">●</span> Discord Voice & Sprech-Status
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="voiceBadge" class="badge badge-idle">Nicht im Talk</span>
+            <label class="switch">
+              <input type="checkbox" id="voiceEnabled" checked onchange="toggleConfig('discord_voice_enabled', this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="stat-row">
+          <span>Kanal:</span>
+          <span id="voiceChannelName" class="stat-val">—</span>
+        </div>
+        <div class="stat-row">
+          <span>Wer spricht gerade:</span>
+          <span id="voiceSpeakingLabel" class="stat-val" style="color: var(--green);">Niemand</span>
+        </div>
+        <div class="voice-members-list" id="voiceMembersList"></div>
+
+        <!-- Voice Priority & Mode Settings -->
+        <div class="stat-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); align-items: center;">
+          <span>Musik bei Sprache unterbrechen:</span>
+          <label class="switch">
+            <input type="checkbox" id="voiceInterruptsMusic" onchange="toggleConfig('voice_interrupts_music', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="stat-row" style="margin-top: 4px; align-items: center;">
+          <span>Anzeige-Modus:</span>
+          <select id="voiceModeSelect" onchange="toggleConfig('voice_mode', this.value)">
+            <option value="on_speaking">Nur wenn jemand spricht</option>
+            <option value="always">Immer im Voice anzeigen</option>
+            <option value="off">Deaktiviert</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Spotify Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <span style="color: var(--green);">●</span> Spotify & Medien
+          </div>
+          <span id="spotifyBadge" class="badge badge-idle">Inaktiv</span>
+        </div>
+        <div class="stat-row">
+          <span>Titel:</span>
+          <span id="spotifyTitle" class="stat-val">Keine Wiedergabe</span>
+        </div>
+        <div class="stat-row">
+          <span>Interpret:</span>
+          <span id="spotifyArtist" class="stat-val">—</span>
+        </div>
+
+        <!-- Text Speed Controls -->
+        <div class="slider-row">
+          <div class="slider-header">
+            <span>Lauftext-Geschwindigkeit:</span>
+            <span id="textSpeedLabel" class="stat-val" style="color: var(--green);">75ms</span>
+          </div>
+          <input type="range" id="textSpeedSlider" min="35" max="140" step="5" value="75"
+            oninput="document.getElementById('textSpeedLabel').innerText = this.value + 'ms'"
+            onchange="setTextSpeed(this.value)">
+          <div class="preset-btns">
+            <button class="preset-btn" onclick="setTextSpeed(50)">⚡ Schnell (50ms)</button>
+            <button class="preset-btn" onclick="setTextSpeed(75)">✨ Normal (75ms)</button>
+            <button class="preset-btn" onclick="setTextSpeed(110)">🐢 Gemütlich (110ms)</button>
+          </div>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-header">
+            <span>Pause vor Scrollen:</span>
+            <span id="textHoldLabel" class="stat-val" style="color: var(--green);">1.2s</span>
+          </div>
+          <input type="range" id="textHoldSlider" min="200" max="2600" step="100" value="1200"
+            oninput="document.getElementById('textHoldLabel').innerText = (this.value / 1000).toFixed(1) + 's'"
+            onchange="setTextHold(this.value)">
+        </div>
+
+        <!-- Clock in Spotify toggle -->
+        <div class="stat-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); align-items: center;">
+          <span>Uhrzeit bei Spotify anzeigen:</span>
+          <label class="switch">
+            <input type="checkbox" id="spotifyClockToggle" checked onchange="toggleConfig('spotify_mini_clock', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Weather in Spotify toggle -->
+        <div class="stat-row" style="margin-top: 6px; align-items: center;">
+          <span>Wetter-Info bei Spotify anzeigen:</span>
+          <label class="switch">
+            <input type="checkbox" id="spotifyWeatherToggle" checked onchange="toggleConfig('spotify_show_weather', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Album Art EQ toggle -->
+        <div class="stat-row" style="margin-top: 6px; align-items: center;">
+          <span>Equalizer im Cover (farblich abgestimmt):</span>
+          <label class="switch">
+            <input type="checkbox" id="spotifyEqToggle" onchange="toggleConfig('spotify_eq', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Mini font toggle -->
+        <div class="stat-row" style="margin-top: 6px; align-items: center;">
+          <span>Kompakte Titelschrift (3x5 Mini):</span>
+          <label class="switch">
+            <input type="checkbox" id="spotifyFontMiniToggle" onchange="toggleConfig('spotify_font_mini', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Ambient aura breathing toggle -->
+        <div class="stat-row" style="margin-top: 6px; align-items: center;">
+          <span>Hintergrund-Aura sanft atmen lassen:</span>
+          <label class="switch">
+            <input type="checkbox" id="spotifyAmbientBreathToggle" checked onchange="toggleConfig('spotify_ambient_breath', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Clock on pause toggle -->
+        <div class="stat-row" style="margin-top: 6px; align-items: center;">
+          <span>Flip Clock bei Pause / Stop anzeigen:</span>
+          <label class="switch">
+            <input type="checkbox" id="spotifyClockOnPauseToggle" checked onchange="toggleConfig('show_paused_spotify', !this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Weather & Forecast Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <span style="color: var(--cyan);">●</span> Wetter & Vorhersage (Open-Meteo)
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="weatherBadge" class="badge badge-idle">Lädt...</span>
+            <label class="switch">
+              <input type="checkbox" id="weatherEnabled" checked onchange="toggleConfig('weather_enabled', this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="input-group">
+          <input type="text" id="weatherCityInput" placeholder="Stadt eingeben (z.B. Berlin, München)..." value="Berlin">
+          <button class="btn btn-primary" onclick="saveWeatherCity()">Speichern</button>
+        </div>
+        <div class="stat-row" style="margin-top: 4px;">
+          <span>Temperatur:</span>
+          <span id="weatherTemp" class="stat-val">—</span>
+        </div>
+        <div class="stat-row">
+          <span>Wetterlage:</span>
+          <span id="weatherCondition" class="stat-val">—</span>
+        </div>
+        <div class="stat-row">
+          <span>Heute (Min / Max):</span>
+          <span id="weatherMinMax" class="stat-val">—</span>
+        </div>
+      </div>
+
+      <!-- Discord Alert Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <span style="color: var(--blurple);">●</span> Discord Benachrichtigungen (Toasts)
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="discordBadge" class="badge badge-idle">Deaktiviert</span>
+            <label class="switch">
+              <input type="checkbox" id="discordEnabled" onchange="toggleConfig('discord_enabled', this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="input-group">
+          <input type="text" id="testMsg" placeholder="Test-Nachricht eingeben..." value="Hallo vom Pixel Hub! 🎮">
+          <button class="btn btn-primary" onclick="sendTestNotification()">Senden</button>
+        </div>
+      </div>
+
+      <!-- Clock & Calendar Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <span style="color: var(--cyan);">●</span> Desktop-Uhr & Datum
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="clockEnabled" checked onchange="toggleConfig('idle_clock', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="stat-row">
+          <span>Uhrzeit / Datum:</span>
+          <span id="clockVal" class="stat-val">--:--</span>
+        </div>
+        <div class="stat-row" style="margin-top: 6px; align-items: center;">
+          <span>Design / Anzeige:</span>
+          <select id="clockStyleSelect" class="btn" style="padding: 4px 8px; font-size: 11px;" onchange="setClockStyle(this.value)">
+            <option value="digital">Digital (Farbverlauf & Wetter)</option>
+            <option value="flip">Flip Clock (Horizontal & Wetter)</option>
+            <option value="flip_vertical">Flip Clock (Vertikal Retro)</option>
+          </select>
+        </div>
+        <div class="stat-row" style="margin-top: 6px; align-items: center;">
+          <span>Farbverlauf / Theme:</span>
+          <select id="clockThemeSelect" class="btn" style="padding: 4px 8px; font-size: 11px;" onchange="setClockTheme(this.value)">
+            <option value="auto">Auto (Tageszeit)</option>
+            <option value="aurora">Aurora (Teal → Lila)</option>
+            <option value="sunset">Sunset (Gold → Pink)</option>
+            <option value="ocean">Ocean (Mint → Blau)</option>
+            <option value="cyber">Cyberpunk (Cyan → Magenta)</option>
+            <option value="fire">Feuer (Rot → Gold)</option>
+            <option value="custom">Eigene Farbe</option>
+          </select>
+        </div>
+        <div class="stat-row" style="margin-top: 6px; align-items: center;">
+          <span>Eigene Farbe:</span>
+          <input type="color" id="clockCustomColor" value="#00e5ff" onchange="setClockColor(this.value, null)" style="width: 34px; height: 22px; border: none; background: transparent; cursor: pointer;">
+        </div>
+        <div class="color-picker-row">
+          <div class="color-dot selected" style="background: #00e5ff;" onclick="setClockColor('#00e5ff', this)"></div>
+          <div class="color-dot" style="background: #1ed760;" onclick="setClockColor('#1ed760', this)"></div>
+          <div class="color-dot" style="background: #ffb300;" onclick="setClockColor('#ffb300', this)"></div>
+          <div class="color-dot" style="background: #f43f5e;" onclick="setClockColor('#f43f5e', this)"></div>
+          <div class="color-dot" style="background: #a855f7;" onclick="setClockColor('#a855f7', this)"></div>
+          <div class="color-dot" style="background: #ffffff;" onclick="setClockColor('#ffffff', this)"></div>
+        </div>
+      </div>
+
+      <!-- Hardware Monitor Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <span style="color: var(--amber);">●</span> Hardware-Monitor (CPU & RAM)
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="hwEnabled" checked onchange="toggleConfig('hardware_enabled', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="stat-row">
+          <span>CPU-Auslastung:</span>
+          <span id="cpuVal" class="stat-val">0%</span>
+        </div>
+        <div class="stat-row">
+          <span>RAM-Belegung:</span>
+          <span id="ramVal" class="stat-val">0%</span>
+        </div>
+      </div>
+
+      <!-- Focus / Pomodoro Timer Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <span style="color: var(--green);">●</span> Fokus & Pomodoro Timer
+          </div>
+          <span id="timerStatusBadge" class="badge badge-idle">Aus</span>
+        </div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button class="btn" onclick="startTimer(25, 'FOKUS')">25m Fokus</button>
+          <button class="btn" onclick="startTimer(5, 'PAUSE')">5m Pause</button>
+          <button class="btn" onclick="startTimer(15, 'GAME')">15m</button>
+          <button class="btn" onclick="stopTimer()" style="color: var(--coral);">Stop</button>
+        </div>
+        <div style="display: flex; gap: 6px; margin-top: 8px; align-items: center;">
+          <input type="number" id="customTimerMin" value="10" min="1" max="180" style="width: 60px; padding: 5px 8px; background: #101216; border: 1px solid #2b3040; color: #fff; border-radius: 6px; font-size: 12px;">
+          <input type="text" id="customTimerLabel" value="TIMER" maxlength="8" style="flex: 1; padding: 5px 8px; background: #101216; border: 1px solid #2b3040; color: #fff; border-radius: 6px; font-size: 12px;">
+          <button class="btn btn-primary" style="flex: 0 0 auto;" onclick="startTimer(document.getElementById('customTimerMin').value, document.getElementById('customTimerLabel').value)">Start</button>
+        </div>
+      </div>
+
+      <!-- Night Mode & LAN Brightness Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <span style="color: var(--amber);">●</span> Nachtmodus & Helligkeit (WLAN)
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="nightModeToggle" onchange="toggleConfig('night_mode_enabled', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="stat-row" style="align-items: center;">
+          <span>Helligkeit sofort (WLAN): <span id="briNowLabel" class="stat-val">100%</span></span>
+          <input type="range" id="briNowSlider" min="5" max="100" step="5" value="100" oninput="document.getElementById('briNowLabel').innerText = this.value + '%'" onchange="setLanBrightness(this.value)" style="width: 110px; accent-color: var(--amber);">
+        </div>
+        <div class="stat-row" style="margin-top: 6px; gap: 8px; align-items: center;">
+          <span>Zeit:</span>
+          <input type="time" id="nightStartInput" value="23:00" onchange="toggleConfig('night_start', this.value)" style="background: #101216; border: 1px solid #2b3040; color: #fff; border-radius: 6px; padding: 3px 6px; font-size: 11px;">
+          <span>bis</span>
+          <input type="time" id="nightEndInput" value="07:00" onchange="toggleConfig('night_end', this.value)" style="background: #101216; border: 1px solid #2b3040; color: #fff; border-radius: 6px; padding: 3px 6px; font-size: 11px;">
+        </div>
+        <div class="stat-row" style="margin-top: 6px; align-items: center;">
+          <span>Nacht-Helligkeit: <span id="nightBriLabel" class="stat-val">20%</span></span>
+          <input type="range" id="nightBriSlider" min="5" max="80" step="5" value="20" oninput="document.getElementById('nightBriLabel').innerText = this.value + '%'" onchange="toggleConfig('night_brightness', parseInt(this.value))" style="width: 110px; accent-color: var(--coral);">
+        </div>
+      </div>
+
+      <!-- 32x32 Pixel-Art Studio Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <span style="color: var(--cyan);">●</span> 32×32 Pixel-Art Studio
+          </div>
+          <button class="btn" style="flex: 0 0 auto; padding: 4px 10px; font-size: 11px;" onclick="clearCustomArt()">Zurück zu Uhr/Spotify</button>
+        </div>
+        <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start;">
+          <canvas id="pixelCanvas" width="32" height="32" class="pixel-canvas"></canvas>
+          <div style="flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+              <span>Pinsl-Farbe:</span>
+              <input type="color" id="brushColor" value="#00e5ff" style="width: 34px; height: 24px; border: none; background: transparent; cursor: pointer;">
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn" onclick="fillPixelCanvas(document.getElementById('brushColor').value)">Füllen</button>
+              <button class="btn" onclick="fillPixelCanvas('#000000')">Leeren</button>
+            </div>
+            <button class="btn btn-primary" onclick="sendPixelCanvas()">📤 Zeichnung senden</button>
+            <label class="btn" style="text-align: center; cursor: pointer;">
+              🖼️ PNG / GIF hochladen
+              <input type="file" accept="image/*" style="display: none;" onchange="uploadArtFile(this.files[0])">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Twitch Live-Alerts & Auto-Game-Detection Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <span style="color: #a855f7;">●</span> Twitch Live-Alerts & Game-HUD
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="twitchEnabled" checked onchange="toggleConfig('twitch_enabled', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div style="display: flex; gap: 6px; margin-top: 4px;">
+          <input type="text" id="twitchChannelsInput" placeholder="Streamer (kommagetrennt, z. B. papaplatte, trymaCs)" style="flex: 1; padding: 6px 10px; background: #101216; border: 1px solid #2b3040; color: #fff; border-radius: 8px; font-size: 12px;">
+          <button class="btn" style="flex: 0 0 auto;" onclick="saveTwitchChannels()">Speichern</button>
+          <button class="btn btn-primary" style="flex: 0 0 auto;" onclick="testTwitchAlert()">Test</button>
+        </div>
+        <div class="stat-row" style="margin-top: 8px;">
+          <span>Auto-Game-Erkennung:</span>
+          <label class="switch">
+            <input type="checkbox" id="gameEnabled" checked onchange="toggleConfig('game_detection_enabled', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="stat-row">
+          <span>Aktives Spiel:</span>
+          <span id="gameVal" class="stat-val">Keins</span>
+        </div>
+      </div>
+
+      <!-- WoW Character Stats HUD Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title">
+            <span style="color: #ffb300;">●</span> WoW Charakter-HUD (Addon)
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="wowEnabled" checked onchange="toggleConfig('wow_enabled', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="stat-row">
+          <span>Charakter:</span>
+          <span id="wowCharVal" class="stat-val">Warte auf /reload...</span>
+        </div>
+        <div class="stat-row">
+          <span>Werte:</span>
+          <span id="wowStatsVal" class="stat-val">--</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let configInitialized = false;
+
+    async function updateStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+
+        // Sync initial config values into UI controls
+        if (data.config && !configInitialized) {
+          configInitialized = true;
+          if (data.config.text_speed_ms) {
+            document.getElementById('textSpeedSlider').value = data.config.text_speed_ms;
+            document.getElementById('textSpeedLabel').innerText = data.config.text_speed_ms + 'ms';
+          }
+          if (data.config.text_hold_ms) {
+            document.getElementById('textHoldSlider').value = data.config.text_hold_ms;
+            document.getElementById('textHoldLabel').innerText = (data.config.text_hold_ms / 1000).toFixed(1) + 's';
+          }
+          if (document.getElementById('voiceEnabled')) {
+            document.getElementById('voiceEnabled').checked = !!data.config.discord_voice_enabled;
+          }
+          if (document.getElementById('discordEnabled')) {
+            document.getElementById('discordEnabled').checked = !!data.config.discord_enabled;
+          }
+          if (document.getElementById('voiceInterruptsMusic')) {
+            document.getElementById('voiceInterruptsMusic').checked = !!data.config.voice_interrupts_music;
+          }
+          if (document.getElementById('voiceModeSelect') && data.config.voice_mode) {
+            document.getElementById('voiceModeSelect').value = data.config.voice_mode;
+          }
+          if (document.getElementById('spotifyClockToggle')) {
+            document.getElementById('spotifyClockToggle').checked = data.config.spotify_mini_clock !== false;
+          }
+          if (document.getElementById('spotifyWeatherToggle')) {
+            document.getElementById('spotifyWeatherToggle').checked = data.config.spotify_show_weather !== false;
+          }
+          if (document.getElementById('spotifyEqToggle')) {
+            document.getElementById('spotifyEqToggle').checked = !!data.config.spotify_eq;
+          }
+          if (document.getElementById('spotifyFontMiniToggle')) {
+            document.getElementById('spotifyFontMiniToggle').checked = !!data.config.spotify_font_mini;
+          }
+          if (document.getElementById('spotifyAmbientBreathToggle')) {
+            document.getElementById('spotifyAmbientBreathToggle').checked = data.config.spotify_ambient_breath !== false;
+          }
+          if (document.getElementById('spotifyClockOnPauseToggle')) {
+            document.getElementById('spotifyClockOnPauseToggle').checked = data.config.show_paused_spotify === false;
+          }
+          if (document.getElementById('clockEnabled')) {
+            document.getElementById('clockEnabled').checked = data.config.idle_clock !== false;
+          }
+          if (document.getElementById('clockStyleSelect')) {
+            const style = data.config.clock_style || 'digital';
+            const flip = data.config.flip_style || 'horizontal';
+            if (style === 'digital') {
+              document.getElementById('clockStyleSelect').value = 'digital';
+            } else if (flip === 'vertical') {
+              document.getElementById('clockStyleSelect').value = 'flip_vertical';
+            } else {
+              document.getElementById('clockStyleSelect').value = 'flip';
+            }
+          }
+          if (document.getElementById('clockThemeSelect')) {
+            document.getElementById('clockThemeSelect').value = data.config.clock_theme || 'auto';
+          }
+          if (document.getElementById('clockCustomColor') && data.config.clock_color) {
+            document.getElementById('clockCustomColor').value = data.config.clock_color;
+          }
+          if (document.getElementById('nightModeToggle')) {
+            document.getElementById('nightModeToggle').checked = !!data.config.night_mode_enabled;
+          }
+          if (document.getElementById('nightStartInput') && data.config.night_start) {
+            document.getElementById('nightStartInput').value = data.config.night_start;
+          }
+          if (document.getElementById('nightEndInput') && data.config.night_end) {
+            document.getElementById('nightEndInput').value = data.config.night_end;
+          }
+          if (document.getElementById('nightBriSlider') && data.config.night_brightness) {
+            document.getElementById('nightBriSlider').value = data.config.night_brightness;
+            document.getElementById('nightBriLabel').innerText = data.config.night_brightness + '%';
+          }
+          if (document.getElementById('twitchEnabled')) {
+            document.getElementById('twitchEnabled').checked = data.config.twitch_enabled !== false;
+          }
+          if (document.getElementById('twitchChannelsInput') && Array.isArray(data.config.twitch_channels)) {
+            document.getElementById('twitchChannelsInput').value = data.config.twitch_channels.join(', ');
+          }
+          if (document.getElementById('gameEnabled')) {
+            document.getElementById('gameEnabled').checked = data.config.game_detection_enabled !== false;
+          }
+          if (document.getElementById('wowEnabled')) {
+            document.getElementById('wowEnabled').checked = data.config.wow_enabled !== false;
+          }
+          if (document.getElementById('weatherEnabled')) {
+            document.getElementById('weatherEnabled').checked = data.config.weather_enabled !== false;
+          }
+          if (document.getElementById('weatherCityInput') && data.config.weather_city) {
+            document.getElementById('weatherCityInput').value = data.config.weather_city;
+          }
+        }
+
+        // Active scene label
+        document.getElementById('activeSceneLabel').innerText = (data.active_plugin || 'IDLE').replace('_', ' ').toUpperCase();
+
+        // Matrix Live Image refresh only when uploads or active scene change
+        const currentUploads = data.ble ? data.ble.total_uploads : 0;
+        if (window._lastUploadCount !== currentUploads || window._lastActiveScene !== data.active_plugin) {
+          window._lastUploadCount = currentUploads;
+          window._lastActiveScene = data.active_plugin;
+          document.getElementById('matrixImg').src = '/api/live.png?t=' + Date.now();
+        }
+
+        // BLE info
+        if (data.ble) {
+          document.getElementById('totalUploads').innerText = data.ble.total_uploads;
+          document.getElementById('uploadSpeed').innerText = (data.ble.last_duration_seconds || 0).toFixed(2) + 's';
+        }
+
+        // Discord Voice
+        const voice = data.plugins?.find(p => p.name === 'discord_voice');
+        if (voice && voice.in_voice) {
+          document.getElementById('voiceBadge').innerText = (voice.member_count || 0) + ' im Talk';
+          document.getElementById('voiceBadge').className = 'badge badge-active';
+          document.getElementById('voiceChannelName').innerText = voice.channel_name || 'Voice';
+          
+          const speaking = voice.speaking || [];
+          document.getElementById('voiceSpeakingLabel').innerText = speaking.length > 0 ? speaking.join(', ') : 'Niemand';
+
+          // Member list pills
+          const membersList = document.getElementById('voiceMembersList');
+          membersList.innerHTML = '';
+          (voice.members || []).forEach(m => {
+            const isSpk = speaking.includes(m);
+            const pill = document.createElement('div');
+            pill.className = 'voice-member-pill';
+            pill.innerHTML = `<div class="speaking-dot ${isSpk ? 'active' : ''}"></div> <span>${m}</span>`;
+            membersList.appendChild(pill);
+          });
+        } else {
+          document.getElementById('voiceBadge').innerText = 'Nicht im Talk';
+          document.getElementById('voiceBadge').className = 'badge badge-idle';
+          document.getElementById('voiceChannelName').innerText = '—';
+          document.getElementById('voiceSpeakingLabel').innerText = '—';
+          document.getElementById('voiceMembersList').innerHTML = '';
+        }
+
+        // Spotify
+        const spot = data.plugins?.find(p => p.name === 'spotify');
+        if (spot && spot.title) {
+          document.getElementById('spotifyTitle').innerText = spot.title;
+          document.getElementById('spotifyArtist').innerText = spot.artist || '—';
+          document.getElementById('spotifyBadge').innerText = spot.playing ? 'Spielt' : 'Pausiert';
+          document.getElementById('spotifyBadge').className = 'badge ' + (spot.playing ? 'badge-active' : 'badge-idle');
+        } else {
+          document.getElementById('spotifyTitle').innerText = 'Keine Wiedergabe';
+          document.getElementById('spotifyArtist').innerText = '—';
+          document.getElementById('spotifyBadge').innerText = 'Inaktiv';
+          document.getElementById('spotifyBadge').className = 'badge badge-idle';
+        }
+
+        // Discord Toasts
+        const disc = data.plugins?.find(p => p.name === 'discord');
+        if (disc) {
+          const count = disc.unread_count || 0;
+          document.getElementById('discordBadge').innerText = count + ' ungelesen';
+          document.getElementById('discordBadge').className = 'badge ' + (count > 0 ? 'badge-active' : 'badge-idle');
+        }
+
+        // Clock
+        const clock = data.plugins?.find(p => p.name === 'clock');
+        if (clock) {
+          document.getElementById('clockVal').innerText = (clock.current_time || '--:--') + ' (' + (clock.current_date || '') + ')';
+        }
+
+        // Hardware
+        const hw = data.plugins?.find(p => p.name === 'hardware');
+        if (hw) {
+          document.getElementById('cpuVal').innerText = (hw.cpu_percent || 0) + '%';
+          document.getElementById('ramVal').innerText = (hw.ram_percent || 0) + '%';
+        }
+        // Game
+        const gm = data.plugins?.find(p => p.name === 'game');
+        if (gm && document.getElementById('gameVal')) {
+          document.getElementById('gameVal').innerText = gm.active_game ? `${gm.active_game} (${gm.elapsed_minutes}m)` : 'Keins';
+        }
+        // WoW
+        const ww = data.plugins?.find(p => p.name === 'wow');
+        if (ww && document.getElementById('wowCharVal')) {
+          if (ww.stats) {
+            const st = ww.stats;
+            document.getElementById('wowCharVal').innerText = `${st.name} (Lv ${st.level} · iLvl ${st.ilvl || '-'})`;
+            document.getElementById('wowStatsVal').innerText = `Crit ${st.crit}% · Haste ${st.haste}% · Mast ${st.mastery}%`;
+          } else {
+            document.getElementById('wowCharVal').innerText = ww.wow_running ? 'WoW läuft (einmal /reload)' : 'Inaktiv';
+            document.getElementById('wowStatsVal').innerText = '--';
+          }
+        }
+        // Timer
+        const tm = data.plugins?.find(p => p.name === 'timer');
+        const tmBadge = document.getElementById('timerStatusBadge');
+        if (tm && tmBadge) {
+          if (tm.running) {
+            const m = Math.floor((tm.remaining_seconds || 0) / 60);
+            const s = (tm.remaining_seconds || 0) % 60;
+            tmBadge.className = 'badge badge-active';
+            tmBadge.innerText = `${tm.label || 'TIMER'} ${m}:${String(s).padStart(2, '0')}`;
+          } else if (tm.finished) {
+            tmBadge.className = 'badge badge-active';
+            tmBadge.innerText = 'FERTIG!';
+          } else {
+            tmBadge.className = 'badge badge-idle';
+            tmBadge.innerText = 'Aus';
+          }
+        }
+
+        // Weather
+        const weath = data.plugins?.find(p => p.name === 'weather');
+        if (weath && weath.temp !== null && weath.temp !== undefined) {
+          document.getElementById('weatherBadge').innerText = weath.temp + '°C · ' + (weath.condition || 'Aktiv');
+          document.getElementById('weatherBadge').className = 'badge badge-active';
+          document.getElementById('weatherTemp').innerText = weath.temp + '°C (' + (weath.city || '—') + ')';
+          document.getElementById('weatherCondition').innerText = weath.condition || '—';
+          document.getElementById('weatherMinMax').innerText = 'Min ' + (weath.temp_min ?? '--') + '°C / Max ' + (weath.temp_max ?? '--') + '°C';
+        } else {
+          document.getElementById('weatherBadge').innerText = 'Lädt...';
+          document.getElementById('weatherBadge').className = 'badge badge-idle';
+          document.getElementById('weatherTemp').innerText = '—';
+          document.getElementById('weatherCondition').innerText = '—';
+          document.getElementById('weatherMinMax').innerText = '—';
+        }
+
+      } catch (err) {
+        console.error('Status fetch error:', err);
+      }
+    }
+
+    async function sendTestNotification() {
+      const msg = document.getElementById('testMsg').value || 'Test';
+      await fetch('/api/test_notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sender: 'Discord', message: msg })
+      });
+      setTimeout(updateStatus, 500);
+    }
+
+    async function forceWidget(pluginName) {
+      await fetch('/api/switch_plugin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plugin: pluginName, duration: 25.0 })
+      });
+      setTimeout(updateStatus, 400);
+    }
+
+    async function setClockColor(color, el) {
+      document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+      if (el) el.classList.add('selected');
+      if (document.getElementById('clockCustomColor')) {
+        document.getElementById('clockCustomColor').value = color;
+      }
+      if (document.getElementById('clockThemeSelect')) {
+        document.getElementById('clockThemeSelect').value = 'custom';
+      }
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clock_color: color, clock_theme: 'custom' })
+      });
+      setTimeout(updateStatus, 400);
+    }
+
+    async function setClockTheme(theme) {
+      await toggleConfig('clock_theme', theme);
+      setTimeout(updateStatus, 400);
+    }
+
+    async function setClockStyle(val) {
+      if (val === 'flip_vertical') {
+        await toggleConfig('clock_style', 'flip');
+        await toggleConfig('flip_style', 'vertical');
+      } else if (val === 'flip') {
+        await toggleConfig('clock_style', 'flip');
+        await toggleConfig('flip_style', 'horizontal');
+      } else {
+        await toggleConfig('clock_style', 'digital');
+      }
+      setTimeout(updateStatus, 400);
+    }
+
+    async function setTextSpeed(val) {
+      document.getElementById('textSpeedSlider').value = val;
+      document.getElementById('textSpeedLabel').innerText = val + 'ms';
+      await toggleConfig('text_speed_ms', parseInt(val));
+    }
+
+    async function setTextHold(val) {
+      document.getElementById('textHoldSlider').value = val;
+      document.getElementById('textHoldLabel').innerText = (val / 1000).toFixed(1) + 's';
+      await toggleConfig('text_hold_ms', parseInt(val));
+    }
+
+    async function saveWeatherCity() {
+      const city = document.getElementById('weatherCityInput').value.trim();
+      if (!city) return;
+      await toggleConfig('weather_city', city);
+      setTimeout(updateStatus, 600);
+    }
+
+    async function toggleConfig(key, val) {
+      const body = {};
+      body[key] = val;
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+    }
+
+    async function startTimer(minutes, label) {
+      await fetch('/api/timer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start', minutes: parseFloat(minutes) || 25, label: label || 'FOKUS' })
+      });
+      setTimeout(updateStatus, 400);
+    }
+
+    async function stopTimer() {
+      await fetch('/api/timer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'stop' })
+      });
+      setTimeout(updateStatus, 400);
+    }
+
+    async function setLanBrightness(val) {
+      await fetch('/api/brightness', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: parseInt(val) })
+      });
+    }
+
+    // 32x32 Pixel-Art Studio
+    const pixelCanvas = document.getElementById('pixelCanvas');
+    const pixelCtx = pixelCanvas ? pixelCanvas.getContext('2d') : null;
+    const pixelBuffer = new Array(1024).fill('#000000');
+    let isDrawing = false;
+
+    function fillPixelCanvas(hex) {
+      if (!pixelCtx) return;
+      pixelCtx.fillStyle = hex;
+      pixelCtx.fillRect(0, 0, 32, 32);
+      pixelBuffer.fill(hex);
+    }
+
+    function paintAtEvent(e) {
+      if (!pixelCanvas || !pixelCtx) return;
+      const rect = pixelCanvas.getBoundingClientRect();
+      const x = Math.max(0, Math.min(31, Math.floor((e.clientX - rect.left) / rect.width * 32)));
+      const y = Math.max(0, Math.min(31, Math.floor((e.clientY - rect.top) / rect.height * 32)));
+      const col = document.getElementById('brushColor').value || '#00e5ff';
+      pixelCtx.fillStyle = col;
+      pixelCtx.fillRect(x, y, 1, 1);
+      pixelBuffer[y * 32 + x] = col;
+    }
+
+    if (pixelCanvas) {
+      fillPixelCanvas('#000000');
+      pixelCanvas.addEventListener('pointerdown', (e) => { isDrawing = true; paintAtEvent(e); });
+      pixelCanvas.addEventListener('pointermove', (e) => { if (isDrawing) paintAtEvent(e); });
+      window.addEventListener('pointerup', () => { isDrawing = false; });
+    }
+
+    async function sendPixelCanvas() {
+      await fetch('/api/custom_art', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pixels: pixelBuffer, duration: 0 })
+      });
+      setTimeout(updateStatus, 400);
+    }
+
+    async function clearCustomArt() {
+      await fetch('/api/custom_art', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'clear' })
+      });
+      setTimeout(updateStatus, 400);
+    }
+
+    function uploadArtFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        await fetch('/api/custom_art', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image_b64: reader.result, duration: 0 })
+        });
+        setTimeout(updateStatus, 500);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function saveTwitchChannels() {
+      const raw = document.getElementById('twitchChannelsInput').value || '';
+      const list = raw.split(',').map(s => s.trim()).filter(Boolean);
+      await toggleConfig('twitch_channels', list);
+      setTimeout(updateStatus, 400);
+    }
+
+    async function testTwitchAlert() {
+      const raw = document.getElementById('twitchChannelsInput').value || 'Streamer';
+      const first = raw.split(',')[0].trim() || 'Streamer';
+      await fetch('/api/test_twitch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ streamer: first, game: 'LIVE' })
+      });
+      setTimeout(updateStatus, 400);
+    }
+
+    // Refresh every 2.5 seconds
+    setInterval(updateStatus, 2500);
+    updateStatus();
+  </script>
+</body>
+</html>

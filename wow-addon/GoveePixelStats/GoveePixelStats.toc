@@ -1,0 +1,8 @@
+## Interface: 16001, 110100, 110007, 40401, 20504, 11506, 11505
+## Title: Govee Pixel Stats
+## Notes: Exports character stats to SavedVariables for Govee H6630 Pixel Hub
+## Author: Mauro
+## Version: 1.0.0
+## SavedVariables: GoveePixelStatsDB
+
+GoveePixelStats.lua
