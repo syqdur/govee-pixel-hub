@@ -276,16 +276,17 @@ def _normalize_glow_color(rgb):
 
 
 def _draw_ambient_glow(image, color, pulse=1.0, cover_box=(6, 1, 25, 20)):
-    """Draws a smooth breathing atmospheric aura bleeding out from the album cover."""
+    """Draws a super-soft breathing atmospheric aura bleeding out from the album cover."""
     x0, y0, x1, y1 = cover_box
     cr, cg, cb = _normalize_glow_color(color)
-    intensity = 0.35 + 0.65 * max(0.0, min(1.0, pulse))
+    # Super-soft gentle breathing between 45% and 100%
+    intensity = 0.45 + 0.55 * max(0.0, min(1.0, pulse))
     for gy in range(22):
         for gx in range(32):
             dx = (x0 - gx) if gx < x0 else ((gx - x1) if gx > x1 else 0)
             dy = (y0 - gy) if gy < y0 else ((gy - y1) if gy > y1 else 0)
             dist = math.hypot(dx, dy)
-            factor = max(0.0, 0.38 - dist * 0.042) * intensity
+            factor = max(0.0, 0.36 - dist * 0.040) * intensity
             if factor > 0.02:
                 image.putpixel((gx, gy), (int(cr * factor), int(cg * factor), int(cb * factor)))
 
@@ -609,8 +610,8 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
         frame_dur = max(40, step_ms)
         eq_sequence = generate_fluid_eq_sequence(steps, playing=playing) if show_eq else None
 
-        # Sample breathing aura at up to 10 smooth sine stages so intermediate frames only delta-encode text
-        breath_stride = max(1, steps // 10) if (use_breath and steps > 1) else 1
+        # Sample breathing aura at up to 14 smooth sine stages so intermediate frames only delta-encode text
+        breath_stride = max(1, steps // 14) if (use_breath and steps > 1) else 1
 
         frames, durations = [], []
         for step in range(steps):
@@ -659,11 +660,11 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
 
         return _encode(frames, durations)
 
-    ambient_breath = opts.get("spotify_ambient_breath", False)
+    ambient_breath = opts.get("spotify_ambient_breath", True)
     gif = _render_marquee(1, ambient_breath)
-    # H6630 BLE buffer rejects payloads > ~20 KB; gracefully step down only if a very long title exceeds 17 KB
+    # H6630 BLE buffer rejects payloads > ~20 KB; preserve breathing aura via 2px step if needed
     if len(gif) > 17000 and ambient_breath:
-        gif = _render_marquee(1, False)
+        gif = _render_marquee(2, True)
     if len(gif) > 17000:
         gif = _render_marquee(2, False)
     return gif
