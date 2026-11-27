@@ -76,7 +76,7 @@ class BlePixelClient:
         started = time.monotonic()
         await self.connection.send_unacked(
             lambda size: mtu_packets(payload, min(size, 244)), before=5,
-            unit=UploadUnit(0xA4, 0x58, 2, .035))
+            unit=UploadUnit(0xA4, 0x58, 2, .065))
         if not self.activated:
             await self.connection.send(command(5, b"\x0a\xfe\x00"))
             self.activated = True

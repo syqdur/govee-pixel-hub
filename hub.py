@@ -335,8 +335,8 @@ class PixelHub:
         pending_key = None
         pending_time = 0.0
         last_upload_finish = 0.0
-        DEBOUNCE_SECONDS = 0.75  # Wait 750ms of track stability so rapid skips don't choke the BLE link
-        MIN_UPLOAD_GAP = 0.8     # Minimum pause between uploads so H6630 flash/decoder settles
+        DEBOUNCE_SECONDS = 1.2   # Wait 1.2s of track stability so skips/metadata churn don't choke BLE/A2DP
+        MIN_UPLOAD_GAP = 1.5     # Minimum pause between uploads so H6630 and A2DP audio settle
 
         try:
             while self.running and (not max_seconds or time.monotonic() - started_time < max_seconds):
@@ -356,12 +356,16 @@ class PixelHub:
                                 if now - last_upload_finish >= MIN_UPLOAD_GAP:
                                     gif_bytes, dur = active.render()
                                     if gif_bytes:
-                                        await self.ble_driver.upload(gif_bytes, label=active.name)
-                                        self.shown_key = key
-                                        pending_key = None
-                                        last_upload_finish = time.monotonic()
-                                        consecutive_errors = 0
-                                        trim_memory()
+                                        if gif_bytes == self.ble_driver.last_gif and self.ble_driver.last_error is None:
+                                            self.shown_key = key
+                                            pending_key = None
+                                        else:
+                                            await self.ble_driver.upload(gif_bytes, label=active.name)
+                                            self.shown_key = key
+                                            pending_key = None
+                                            last_upload_finish = time.monotonic()
+                                            consecutive_errors = 0
+                                            trim_memory()
                         else:
                             pending_key = None
 
