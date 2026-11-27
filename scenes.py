@@ -279,16 +279,16 @@ def _draw_ambient_glow(image, color, pulse=1.0, cover_box=(6, 1, 25, 20)):
     """Draws a super-soft breathing atmospheric aura bleeding out from the album cover."""
     x0, y0, x1, y1 = cover_box
     cr, cg, cb = _normalize_glow_color(color)
-    # Super-soft gentle breathing between 45% and 100%
-    intensity = 0.45 + 0.55 * max(0.0, min(1.0, pulse))
+    # Super-soft gentle breathing between 50% and 100%
+    intensity = 0.50 + 0.50 * max(0.0, min(1.0, pulse))
     for gy in range(22):
         for gx in range(32):
             dx = (x0 - gx) if gx < x0 else ((gx - x1) if gx > x1 else 0)
             dy = (y0 - gy) if gy < y0 else ((gy - y1) if gy > y1 else 0)
             dist = math.hypot(dx, dy)
-            factor = max(0.0, 0.36 - dist * 0.040) * intensity
-            if factor > 0.02:
-                image.putpixel((gx, gy), (int(cr * factor), int(cg * factor), int(cb * factor)))
+            # Gentle falloff + minimum LED floor (0.12) so outer edge pixels never go dead/black
+            factor = max(0.12, 0.42 - dist * 0.032) * intensity
+            image.putpixel((gx, gy), (int(cr * factor), int(cg * factor), int(cb * factor)))
 
 
 def _draw_cover_eq(image, heights, colors, playing=True):
