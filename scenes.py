@@ -276,18 +276,17 @@ def _normalize_glow_color(rgb):
 
 
 def _draw_ambient_glow(image, color, pulse=1.0, cover_box=(6, 1, 25, 20)):
-    """Draws a rich atmospheric ambient aura bleeding out from the album cover with gentle breathing."""
+    """Draws a rich, silky-smooth breathing atmospheric aura bleeding out from the album cover."""
     x0, y0, x1, y1 = cover_box
     cr, cg, cb = _normalize_glow_color(color)
-    # Quantize breathing pulse into smooth distinct stages to keep GIF payload compact
-    p_step = round(pulse * 3) / 3.0
-    intensity = 0.60 + 0.40 * p_step  # breathes gently between 60% and 100% (never turns off)
+    # Continuous sinusoidal breathing between 35% and 100% for silky-smooth LED transitions
+    intensity = 0.35 + 0.65 * max(0.0, min(1.0, pulse))
     for gy in range(22):
         for gx in range(32):
             dx = (x0 - gx) if gx < x0 else ((gx - x1) if gx > x1 else 0)
             dy = (y0 - gy) if gy < y0 else ((gy - y1) if gy > y1 else 0)
             dist = math.hypot(dx, dy)
-            factor = max(0.0, 0.32 - dist * 0.040) * intensity
+            factor = max(0.0, 0.38 - dist * 0.042) * intensity
             if factor > 0.02:
                 image.putpixel((gx, gy), (int(cr * factor), int(cg * factor), int(cb * factor)))
 
@@ -610,9 +609,9 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
         step_px = 1
         steps = 1
     else:
-        # Smooth 1-pixel continuous glide (~10-25 FPS depending on text_speed_ms)
-        step_px = 1
-        steps = text.cycle
+        # 1px glide for short titles; 2px glide for long titles to keep breathing-aura GIFs fast over BLE
+        step_px = 2 if text.cycle > 70 else 1
+        steps = max(1, (text.cycle + step_px - 1) // step_px)
 
     frame_dur = max(40, step_ms)
 
