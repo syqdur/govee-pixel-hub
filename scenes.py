@@ -605,7 +605,7 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
 
     text = Marquee(parts, box=32, font_type=font_type)
 
-    def _render_marquee(step_px, use_breath):
+    def _render_marquee(step_px, use_breath, breath_stride=1):
         steps = 1 if text.cycle == 0 else max(1, (text.cycle + step_px - 1) // step_px)
         frame_dur = max(40, step_ms)
         eq_sequence = generate_fluid_eq_sequence(steps, playing=playing) if show_eq else None
@@ -614,7 +614,8 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
         for step in range(steps):
             image = Image.new("RGB", (32, 32), "black")
             if use_breath and steps > 1:
-                t = 2.0 * math.pi * step / steps
+                s_step = (step // breath_stride) * breath_stride
+                t = 2.0 * math.pi * s_step / steps
                 pulse = 0.50 + 0.50 * math.sin(t)
             else:
                 pulse = 1.0
@@ -657,16 +658,20 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
         return _encode(frames, durations)
 
     ambient_breath = opts.get("spotify_ambient_breath", True)
-    initial_step = 2 if (ambient_breath and text.cycle > 55) else 1
-    gif = _render_marquee(initial_step, ambient_breath)
-    # H6630 BLE buffer rejects payloads > ~20 KB; preserve continuous breathing via 2px step if needed
-    if len(gif) > 17000 and initial_step == 1:
-        gif = _render_marquee(2, ambient_breath)
-    if len(gif) > 17000 and ambient_breath:
+    if not ambient_breath:
         gif = _render_marquee(1, False)
-    if len(gif) > 17000:
-        gif = _render_marquee(2, False)
-    return gif
+        if len(gif) > 17000:
+            gif = _render_marquee(2, False)
+        return gif
+
+    # Preserve breathing aura even on very long song titles by stepping stride before disabling breath
+    for s_px, b_stride in ((1, 1), (2, 1), (2, 2), (2, 3)):
+        if s_px == 1 and text.cycle > 60:
+            continue
+        gif = _render_marquee(s_px, True, b_stride)
+        if len(gif) <= 17000:
+            return gif
+    return _render_marquee(2, False)
 
 
 def discord_scene(sender, message, options=None):
