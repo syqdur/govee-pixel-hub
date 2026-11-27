@@ -610,15 +610,11 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
         frame_dur = max(40, step_ms)
         eq_sequence = generate_fluid_eq_sequence(steps, playing=playing) if show_eq else None
 
-        # Sample breathing aura at up to 14 smooth sine stages so intermediate frames only delta-encode text
-        breath_stride = max(1, steps // 14) if (use_breath and steps > 1) else 1
-
         frames, durations = [], []
         for step in range(steps):
             image = Image.new("RGB", (32, 32), "black")
             if use_breath and steps > 1:
-                sample_step = (step // breath_stride) * breath_stride
-                t = 2.0 * math.pi * sample_step / steps
+                t = 2.0 * math.pi * step / steps
                 pulse = 0.50 + 0.50 * math.sin(t)
             else:
                 pulse = 1.0
@@ -661,10 +657,13 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
         return _encode(frames, durations)
 
     ambient_breath = opts.get("spotify_ambient_breath", True)
-    gif = _render_marquee(1, ambient_breath)
-    # H6630 BLE buffer rejects payloads > ~20 KB; preserve breathing aura via 2px step if needed
+    initial_step = 2 if (ambient_breath and text.cycle > 55) else 1
+    gif = _render_marquee(initial_step, ambient_breath)
+    # H6630 BLE buffer rejects payloads > ~20 KB; preserve continuous breathing via 2px step if needed
+    if len(gif) > 17000 and initial_step == 1:
+        gif = _render_marquee(2, ambient_breath)
     if len(gif) > 17000 and ambient_breath:
-        gif = _render_marquee(2, True)
+        gif = _render_marquee(1, False)
     if len(gif) > 17000:
         gif = _render_marquee(2, False)
     return gif
