@@ -665,7 +665,7 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
         return gif
 
     # Preserve breathing aura even on very long song titles by stepping stride before disabling breath
-    for s_px, b_stride in ((1, 1), (2, 1), (2, 2), (2, 3)):
+    for s_px, b_stride in ((1, 1), (2, 1), (2, 2), (2, 3), (2, 4), (2, 6), (2, 8)):
         if s_px == 1 and text.cycle > 60:
             continue
         gif = _render_marquee(s_px, True, b_stride)
