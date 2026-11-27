@@ -550,7 +550,7 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
         # Prevents any Bluetooth A2DP audio dropouts / interference on AirPods!
         base = Image.new("RGB", (32, 32), "black")
         _draw_ambient_glow(base, c_base, pulse=1.0)
-        base.paste(cover, (6, 1), _COVER_MASK_20)
+        base.paste(cover, (6, 1))
         draw_b = ImageDraw.Draw(base)
 
         _draw_spotify_top_bar(
@@ -622,7 +622,7 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
             else:
                 pulse = 1.0
             _draw_ambient_glow(image, c_base, pulse=pulse)
-            image.paste(cover, (6, 1), _COVER_MASK_20)
+            image.paste(cover, (6, 1))
             draw = ImageDraw.Draw(image)
 
             if show_eq and eq_sequence:
@@ -660,12 +660,11 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
         return _encode(frames, durations)
 
     ambient_breath = opts.get("spotify_ambient_breath", False)
-    initial_step = 2 if text.cycle > 70 else 1
-    gif = _render_marquee(initial_step, ambient_breath)
-    # H6630 BLE buffer rejects payloads > ~20 KB; gracefully step down if a long title exceeds 17 KB
-    if len(gif) > 17000 and initial_step == 1:
-        gif = _render_marquee(2, ambient_breath)
+    gif = _render_marquee(1, ambient_breath)
+    # H6630 BLE buffer rejects payloads > ~20 KB; gracefully step down only if a very long title exceeds 17 KB
     if len(gif) > 17000 and ambient_breath:
+        gif = _render_marquee(1, False)
+    if len(gif) > 17000:
         gif = _render_marquee(2, False)
     return gif
 
