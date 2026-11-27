@@ -276,10 +276,9 @@ def _normalize_glow_color(rgb):
 
 
 def _draw_ambient_glow(image, color, pulse=1.0, cover_box=(6, 1, 25, 20)):
-    """Draws a rich, silky-smooth breathing atmospheric aura bleeding out from the album cover."""
+    """Draws a smooth breathing atmospheric aura bleeding out from the album cover."""
     x0, y0, x1, y1 = cover_box
     cr, cg, cb = _normalize_glow_color(color)
-    # Continuous sinusoidal breathing between 35% and 100% for silky-smooth LED transitions
     intensity = 0.35 + 0.65 * max(0.0, min(1.0, pulse))
     for gy in range(22):
         for gx in range(32):
@@ -605,74 +604,70 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
 
     text = Marquee(parts, box=32, font_type=font_type)
 
-    if text.cycle == 0:
-        step_px = 1
-        steps = 1
-    else:
-        # 1px glide for short titles; 2px glide for long titles to keep breathing-aura GIFs fast over BLE
-        step_px = 2 if text.cycle > 70 else 1
-        steps = max(1, (text.cycle + step_px - 1) // step_px)
+    def _render_marquee(step_px, use_breath):
+        steps = 1 if text.cycle == 0 else max(1, (text.cycle + step_px - 1) // step_px)
+        frame_dur = max(40, step_ms)
+        eq_sequence = generate_fluid_eq_sequence(steps, playing=playing) if show_eq else None
 
-    frame_dur = max(40, step_ms)
+        # Sample breathing aura at up to 10 smooth sine stages so intermediate frames only delta-encode text
+        breath_stride = max(1, steps // 10) if (use_breath and steps > 1) else 1
 
-    # Pre-generate gentle cyclic EQ heights with sub-pixel floats if EQ enabled
-    eq_sequence = generate_fluid_eq_sequence(steps, playing=playing) if show_eq else None
+        frames, durations = [], []
+        for step in range(steps):
+            image = Image.new("RGB", (32, 32), "black")
+            if use_breath and steps > 1:
+                sample_step = (step // breath_stride) * breath_stride
+                t = 2.0 * math.pi * sample_step / steps
+                pulse = 0.50 + 0.50 * math.sin(t)
+            else:
+                pulse = 1.0
+            _draw_ambient_glow(image, c_base, pulse=pulse)
+            image.paste(cover, (6, 1), _COVER_MASK_20)
+            draw = ImageDraw.Draw(image)
+
+            if show_eq and eq_sequence:
+                _draw_cover_eq(image, eq_sequence[step], (c_base, c_accent), playing=playing)
+
+            _draw_spotify_top_bar(
+                image, weather=weather, show_weather=show_weather,
+                show_clock=show_clock, hour_str=hour_str, min_str=min_str, clock_color=clock_color,
+            )
+
+            sync_sec = opts.get("progress_sync_seconds", 0)
+            if timeline and timeline[1] > 0 and sync_sec > 0:
+                start_pos, end = timeline
+                pct = max(0.0, min(1.0, start_pos / end))
+                fill_w = int(round(pct * 30))
+                if fill_w > 0:
+                    draw.line((1, 22, fill_w, 22), fill=GREEN)
+                    draw.point((fill_w, 22), fill=WHITE)
+                else:
+                    draw.point((1, 22), fill=WHITE)
+                if fill_w < 30:
+                    draw.line((max(1, fill_w + 1), 22, 30, 22), fill=DIM)
+            else:
+                c_norm = _normalize_glow_color(c_base)
+                c_div = (max(25, int(c_norm[0] * 0.35)), max(25, int(c_norm[1] * 0.35)), max(25, int(c_norm[2] * 0.35)))
+                draw.line((2, 22, 29, 22), fill=c_div)
+                draw.point((15, 22), fill=WHITE)
+                draw.point((16, 22), fill=WHITE)
+
+            text.paste(image, 0, 23, step * step_px)
+            frames.append(image)
+            dur = (frame_dur + hold_ms) if (step == 0 and hold_ms > 0 and steps > 1) else frame_dur
+            durations.append(dur)
+
+        return _encode(frames, durations)
 
     ambient_breath = opts.get("spotify_ambient_breath", False)
-
-    frames, durations = [], []
-    for step in range(steps):
-        image = Image.new("RGB", (32, 32), "black")
-        # Soft atmospheric ambient glow bleeding out from the album cover (with gentle breathing)
-        if ambient_breath and steps > 1:
-            t = 2.0 * math.pi * step / steps
-            pulse = 0.50 + 0.50 * math.sin(t)
-        else:
-            pulse = 1.0
-        _draw_ambient_glow(image, c_base, pulse=pulse)
-        # Center album art 20x20 at x=6, y=1 with soft rounded LED corners
-        image.paste(cover, (6, 1), _COVER_MASK_20)
-        draw = ImageDraw.Draw(image)
-
-        # Equalizer overlay on album cover (only if explicitly enabled)
-        if show_eq and eq_sequence:
-            _draw_cover_eq(image, eq_sequence[step], (c_base, c_accent), playing=playing)
-
-        # Translucent 70% dark top bar with horizontal weather & optional clock
-        _draw_spotify_top_bar(
-            image, weather=weather, show_weather=show_weather,
-            show_clock=show_clock, hour_str=hour_str, min_str=min_str, clock_color=clock_color,
-        )
-
-        # Divider / Progress Bar at row 22 (x=1..30)
-        sync_sec = opts.get("progress_sync_seconds", 0)
-        if timeline and timeline[1] > 0 and sync_sec > 0:
-            start_pos, end = timeline
-            pct = max(0.0, min(1.0, start_pos / end))
-            fill_w = int(round(pct * 30))
-            if fill_w > 0:
-                draw.line((1, 22, fill_w, 22), fill=GREEN)
-                draw.point((fill_w, 22), fill=WHITE)  # glowing progress head
-            else:
-                draw.point((1, 22), fill=WHITE)
-            if fill_w < 30:
-                draw.line((max(1, fill_w + 1), 22, 30, 22), fill=DIM)
-        else:
-            # Subtle elegant divider line tinted with album aura
-            c_norm = _normalize_glow_color(c_base)
-            c_div = (max(25, int(c_norm[0] * 0.35)), max(25, int(c_norm[1] * 0.35)), max(25, int(c_norm[2] * 0.35)))
-            draw.line((2, 22, 29, 22), fill=c_div)
-            draw.point((15, 22), fill=WHITE)
-            draw.point((16, 22), fill=WHITE)
-
-        # Marquee text at rows 23..31: seamless continuous flow with 0 jump
-        text.paste(image, 0, 23, step * step_px)
-        frames.append(image)
-        # Hold frame 0 briefly so the title start is easy to read
-        dur = (frame_dur + hold_ms) if (step == 0 and hold_ms > 0 and steps > 1) else frame_dur
-        durations.append(dur)
-
-    return _encode(frames, durations)
+    initial_step = 2 if text.cycle > 70 else 1
+    gif = _render_marquee(initial_step, ambient_breath)
+    # H6630 BLE buffer rejects payloads > ~20 KB; gracefully step down if a long title exceeds 17 KB
+    if len(gif) > 17000 and initial_step == 1:
+        gif = _render_marquee(2, ambient_breath)
+    if len(gif) > 17000 and ambient_breath:
+        gif = _render_marquee(2, False)
+    return gif
 
 
 def discord_scene(sender, message, options=None):
