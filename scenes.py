@@ -562,7 +562,7 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
         # Subtle elegant divider line tinted with album aura
         c_norm = _normalize_glow_color(c_base)
         c_div = (max(25, int(c_norm[0] * 0.35)), max(25, int(c_norm[1] * 0.35)), max(25, int(c_norm[2] * 0.35)))
-        draw_b.line((2, 22, 29, 22), fill=c_div)
+        draw_b.line((0, 22, 31, 22), fill=c_div)
         draw_b.point((15, 22), fill=WHITE)
         draw_b.point((16, 22), fill=WHITE)
 
@@ -646,7 +646,7 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
             else:
                 c_norm = _normalize_glow_color(c_base)
                 c_div = (max(25, int(c_norm[0] * 0.35)), max(25, int(c_norm[1] * 0.35)), max(25, int(c_norm[2] * 0.35)))
-                draw.line((2, 22, 29, 22), fill=c_div)
+                draw.line((0, 22, 31, 22), fill=c_div)
                 draw.point((15, 22), fill=WHITE)
                 draw.point((16, 22), fill=WHITE)
 
