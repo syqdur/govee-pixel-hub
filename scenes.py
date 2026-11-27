@@ -607,7 +607,7 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
 
     def _render_marquee(step_px, use_breath, breath_stride=1):
         steps = 1 if text.cycle == 0 else max(1, (text.cycle + step_px - 1) // step_px)
-        frame_dur = max(40, step_ms)
+        frame_dur = max(40, step_ms) * step_px
         eq_sequence = generate_fluid_eq_sequence(steps, playing=playing) if show_eq else None
 
         frames, durations = [], []

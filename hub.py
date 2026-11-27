@@ -124,7 +124,7 @@ DEFAULT_CONFIG = {
     "discord_voice_enabled": True,
     "voice_mode": "on_speaking",
     "voice_interrupts_music": False,
-    "text_speed_ms": 180,
+    "text_speed_ms": 220,
     "text_hold_ms": 0,
     "weather_enabled": True,
     "weather_carousel": False,
