@@ -33,13 +33,25 @@ def get_running_hub_pids():
 
 
 def kill_all_hubs():
-    """Terminates all running hub.py processes cleanly."""
-    pids = get_running_hub_pids()
-    for pid in pids:
+    """Terminates all running hub.py processes (including venv launcher trees)."""
+    pids = set(get_running_hub_pids())
+    if PID_FILE.exists():
         try:
-            subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True)
+            saved_pid = json.loads(PID_FILE.read_text(encoding="utf-8")).get("pid")
+            if isinstance(saved_pid, int) and saved_pid > 0:
+                pids.add(saved_pid)
         except Exception:
             pass
+
+    for pid in pids:
+        try:
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True, timeout=5)
+        except Exception:
+            pass
+
+    if pids:
+        time.sleep(0.5)
+
     if PID_FILE.exists():
         try:
             PID_FILE.unlink()
@@ -48,12 +60,18 @@ def kill_all_hubs():
 
 
 def is_hub_healthy(port=5000, timeout=1.0):
-    """Checks if the hub REST API responds with valid status."""
+    """Checks if the hub REST API responds and BLE is not stuck."""
     try:
         with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/status", timeout=timeout) as resp:
             if resp.status == 200:
                 data = json.loads(resp.read().decode("utf-8"))
-                return data.get("active_plugin") is not None
+                if data.get("active_plugin") is None:
+                    return False
+                ble = data.get("ble") or {}
+                last_err = str(ble.get("last_error") or "")
+                if "GoveeBleTimeout" in last_err and ble.get("total_uploads", 0) == 0:
+                    return False
+                return True
     except Exception:
         pass
     return False
