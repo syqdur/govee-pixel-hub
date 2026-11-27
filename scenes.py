@@ -610,12 +610,11 @@ def spotify_scene(track, thumbnail, unread=0, playing=True, timeline=None, optio
         step_px = 1
         steps = 1
     else:
-        # Smooth 2-pixel continuous glide (cuts payload and radio traffic by 60%)
-        step_px = 2
-        steps = max(1, (text.cycle + step_px - 1) // step_px)
+        # Smooth 1-pixel continuous glide (~10-25 FPS depending on text_speed_ms)
+        step_px = 1
+        steps = text.cycle
 
-    # Calm, readable timing per frame (140-160ms for 2-pixel glide = ~13 px/sec)
-    frame_dur = max(90, step_ms)
+    frame_dur = max(40, step_ms)
 
     # Pre-generate gentle cyclic EQ heights with sub-pixel floats if EQ enabled
     eq_sequence = generate_fluid_eq_sequence(steps, playing=playing) if show_eq else None
@@ -868,19 +867,17 @@ def idle_scene(unread=0, weather_data=None, now_dt=None, options=None):
     hh_w = pixel_font.measure_text(time_str[:2], font_type="clock")
     colon_x = cx + hh_w + 1
 
-    # 4-frame smooth colon pulse (only the 2px colon changes -> tiny GIF!)
-    colon_shades = [
-        _lerp_color((255, 255, 255), mid_col, 0.5),
-        (mid_col[0] // 2, mid_col[1] // 2, mid_col[2] // 2),
-        (mid_col[0] // 7, mid_col[1] // 7, mid_col[2] // 7),
-        (mid_col[0] // 2, mid_col[1] // 2, mid_col[2] // 2),
-    ]
-    frames, durations = [], [600, 300, 600, 300]
-    for c_col in colon_shades:
+    # 10-frame smooth sinusoidal colon breath (only 2px changes -> ~1 KB total GIF!)
+    frames, durations = [], []
+    for k in range(10):
+        t = 0.5 + 0.5 * math.sin(2.0 * math.pi * k / 10.0)
+        eased = t * t * (3.0 - 2.0 * t)
+        c_col = _lerp_color((mid_col[0] // 7, mid_col[1] // 7, mid_col[2] // 7), _lerp_color((255, 255, 255), mid_col, 0.5), eased)
         frame = base.copy()
         frame.putpixel((colon_x, cy + 1), c_col)
         frame.putpixel((colon_x, cy + 4), c_col)
         frames.append(frame)
+        durations.append(90)
 
     return _encode(frames, durations)
 
