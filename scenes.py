@@ -284,8 +284,6 @@ def _draw_ambient_glow(image, color, pulse=1.0, cover_box=(6, 1, 25, 20)):
     intensity = 0.60 + 0.40 * p_step  # breathes gently between 60% and 100% (never turns off)
     for gy in range(22):
         for gx in range(32):
-            if x0 <= gx <= x1 and y0 <= gy <= y1:
-                continue
             dx = (x0 - gx) if gx < x0 else ((gx - x1) if gx > x1 else 0)
             dy = (y0 - gy) if gy < y0 else ((gy - y1) if gy > y1 else 0)
             dist = math.hypot(dx, dy)
